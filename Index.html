@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metro Vancouver Neighborhood Comparison Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .filter-section {
+            transition: all 0.3s ease-in-out;
+        }
+        .comparison-card {
+            transition: transform 0.3s ease-in-out;
+        }
+        .comparison-card:hover {
+            transform: translateY(-5px);
+        }
+        .custom-checkbox:checked {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+        .custom-checkbox:checked::after {
+            content: '✓';
+            color: white;
+            display: block;
+            text-align: center;
+            line-height: 1.2;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    <!-- Chosen Palette: Professional Blue & Gray Harmony -->
+    <!-- Application Structure Plan: The application is structured into four main interactive sections: 1) Neighborhood Recommendation, 2) Neighborhood Comparison Selection, 3) Comparison Overview, and 4) Call To Action. This linear flow guides the user from initial preference setting to detailed comparison and finally to a conversion point. The Recommendation section acts as a powerful filter, helping users narrow down choices based on lifestyle and property criteria, which then feeds into the Comparison Selection dropdowns. The Comparison Overview presents a side-by-side analysis and a map visualization. This structure was chosen to facilitate a clear user journey: discover, select, compare, and then take action, which is optimal for a lead-generation tool. -->
+    <!-- Visualization & Content Choices: Report Info: All neighborhood data (prices, amenities, pros/cons, etc.). -> Goal: Allow users to discover and compare neighborhoods. -> Viz/Presentation Method: The primary structure uses interactive forms (HTML dropdowns/checkboxes) and side-by-side content cards (HTML/CSS). A Google Map provides crucial geographic visualization. -> Interaction: Users select preferences to trigger a filter (JS), which updates the comparison dropdowns. A 'Compare' button triggers the display of the detailed cards and map update. -> Justification: This multi-step process breaks down a complex decision into manageable parts. Direct textual presentation of data is clearer than charts for comparing two items. The map adds essential spatial context. -> Library/Method: Vanilla JS for all logic, Google Maps API for the map, Tailwind CSS for styling. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <div class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
+
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-blue-800 mb-6 text-center leading-tight">
+            Metro Vancouver Neighborhood Comparison
+        </h1>
+        <p class="text-lg text-gray-600 mb-10 text-center max-w-2xl">
+            Explore communities across Metro Vancouver. Use our recommendation tool to find areas that match your needs, then compare your top choices side-by-side.
+        </p>
+
+        <div class="w-full max-w-5xl bg-white p-6 sm:p-8 rounded-xl shadow-lg mb-8 border border-gray-200 filter-section">
+            <h2 class="text-2xl font-bold text-blue-800 mb-6 text-center">Find Your Perfect Neighborhood</h2>
+            <p class="text-md text-gray-700 mb-6 text-center">
+                Tell us what you're looking for, and we'll suggest neighborhoods that fit your criteria. This helps you quickly identify areas aligned with your lifestyle and budget before diving into a detailed comparison.
+            </p>
+            <div id="recommendation-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label for="preferredLifestyle" class="block text-lg font-medium text-gray-700 mb-2">Preferred Lifestyle:</label>
+                    <select id="preferredLifestyle" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"></select>
+                </div>
+                <div>
+                    <label for="preferredPropertyTypeRec" class="block text-lg font-medium text-gray-700 mb-2">Preferred Property Type:</label>
+                    <select id="preferredPropertyTypeRec" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"></select>
+                </div>
+                <div>
+                    <label class="block text-lg font-medium text-gray-700 mb-2">Target Detached Price Range:</label>
+                    <div class="flex gap-4">
+                        <input type="number" id="preferredMinPriceRec" placeholder="Min Price" class="w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
+                        <input type="number" id="preferredMaxPriceRec" placeholder="Max Price" class="w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
+                    </div>
+                </div>
+                <div id="preferredAmenitiesContainer" class="md:col-span-2 lg:col-span-3">
+                    <label class="block text-lg font-medium text-gray-700 mb-2">Preferred Amenities:</label>
+                    <div id="preferredAmenitiesRec" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2 bg-white"></div>
+                </div>
+            </div>
+            <button id="get-recommendations-btn" class="w-full px-8 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
+                Get Recommendations
+            </button>
+            <div id="recommendations-output" class="mt-8 hidden">
+                <h3 class="text-xl font-semibold text-blue-700 mb-4">Recommended Neighborhoods:</h3>
+                <ul id="recommendations-list" class="list-disc list-inside space-y-2 text-gray-700"></ul>
+                 <p id="no-recommendations-msg" class="text-center text-gray-600 hidden">No neighborhoods match your current preferences. Try adjusting your criteria.</p>
+            </div>
+        </div>
+
+        <div class="w-full max-w-5xl bg-white p-6 sm:p-8 rounded-xl shadow-lg mb-8 border border-gray-200 filter-section">
+             <h2 class="text-2xl font-bold text-blue-800 mb-6 text-center">Compare Neighborhoods</h2>
+             <p class="text-md text-gray-700 mb-6 text-center">
+                Choose any two neighborhoods from the list below to see a detailed side-by-side comparison of their key features, market data, and lifestyle aspects.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div>
+                    <label for="neighborhood1" class="block text-lg font-medium text-gray-700 mb-2">Neighborhood 1:</label>
+                    <select id="neighborhood1" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"></select>
+                </div>
+                <div>
+                    <label for="neighborhood2" class="block text-lg font-medium text-gray-700 mb-2">Neighborhood 2:</label>
+                    <select id="neighborhood2" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"></select>
+                </div>
+            </div>
+             <button id="compare-btn" class="w-full mt-8 px-8 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
+                Compare
+            </button>
+        </div>
+
+        <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md relative mb-6 w-full max-w-xl text-center hidden" role="alert"></div>
+
+        <div id="comparison-output" class="w-full max-w-6xl bg-white p-6 sm:p-8 rounded-xl shadow-xl border border-gray-200 hidden">
+            <h2 class="text-3xl font-bold text-blue-800 mb-6 text-center">Comparison Overview</h2>
+            <p class="text-md text-gray-700 mb-6 text-center">
+                Here's a detailed side-by-side look at the two neighborhoods you selected. This data helps you understand the key differences in real estate values, lifestyle, and local amenities. Use the map to see their locations relative to each other and the wider Metro Vancouver area.
+            </p>
+
+            <div class="mb-8">
+                <h3 class="text-2xl font-semibold text-blue-700 mb-4 text-center">Neighborhood Locations</h3>
+                <div id="map" class="w-full h-96 rounded-xl shadow-inner border border-gray-200"></div>
+            </div>
+
+            <div id="comparison-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-8"></div>
+        </div>
+
+        <div class="w-full max-w-5xl bg-white p-6 sm:p-8 rounded-xl shadow-lg mt-8 border border-gray-200">
+            <h2 class="text-3xl font-bold text-blue-800 mb-6 text-center">Ready to Make Your Move?</h2>
+            <p class="text-lg text-gray-700 mb-8 text-center max-w-2xl mx-auto">
+                This tool provides a snapshot of each community, but real estate decisions are personal. For expert guidance and the latest market insights, connect with our team.
+            </p>
+            <div class="flex justify-center mb-8">
+                <a href="https://amanbrah.com" target="_blank" rel="noopener noreferrer" class="px-8 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105 flex items-center">
+                    Visit AmanBrah.com
+                </a>
+            </div>
+            <p class="text-sm text-gray-500 text-center">
+                Explore more listings and services directly on our main website.
+            </p>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const neighborhoodsData = [
+                { id: 'west-vancouver', name: 'West Vancouver', region: 'Vancouver West', description: 'Affluent municipality known for its luxury homes, stunning ocean and mountain views, and top-rated schools.', avgCondoPrice: 1200000, avgDetachedPrice: 4500000, propertyTypes: ['Condo', 'Detached'], keyAmenities: ['Parks', 'Shopping', 'Schools', 'Mountain Access', 'Ocean Views'], lifestyle: 'Luxury, Outdoor Activities, Family-Oriented, Exclusive', pros: ['Prestigious address', 'Exceptional views', 'Excellent schools', 'Access to nature', 'Low density'], cons: ['Extremely high prices', 'Limited public transit outside main routes', 'Hilly terrain'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=West+Vancouver', lat: 49.3250, lng: -123.1500, crimeRate: 'Very Low', schoolRating: 'Excellent (highly sought after)', populationDemographics: 'High-net-worth individuals, established families, older population', futureDevelopments: 'Strict zoning, very limited new development, focus on high-end custom homes.' },
+                { id: 'kitsilano', name: 'Kitsilano', region: 'Vancouver West', description: 'Vibrant beachfront community known for its laid-back atmosphere, Kits Beach, and trendy shops. Offers a mix of condos, townhouses, and detached homes.', avgCondoPrice: 950000, avgDetachedPrice: 2800000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Beach Access', 'Parks', 'Schools', 'Shopping', 'Community Centre', 'Transit'], lifestyle: 'Active, Youthful, Family-Friendly, Beach-Oriented', pros: ['Beach access', 'Lively atmosphere', 'Good schools', 'Walkable', 'Scenic views'], cons: ['High prices', 'Busy during summer', 'Parking can be difficult', 'Older housing stock'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Kitsilano', lat: 49.2733, lng: -123.1610, crimeRate: 'Low', schoolRating: 'Excellent (Public & Private)', populationDemographics: 'Young professionals, families, active retirees', futureDevelopments: 'Limited new large-scale developments due to density, focus on infill and renovations.' },
+                { id: 'gastown', name: 'Gastown', region: 'Downtown Vancouver', description: 'Historic district with cobblestone streets, Victorian architecture, and a lively nightlife scene. Primarily condos and lofts.', avgCondoPrice: 700000, avgDetachedPrice: null, propertyTypes: ['Condo', 'Loft'], keyAmenities: ['Shopping', 'Restaurants', 'Transit', 'Art Galleries', 'Nightlife'], lifestyle: 'Urban, Trendy, Nightlife, Historic', pros: ['Unique character', 'Excellent dining/bars', 'Central location', 'Good transit', 'Walkable'], cons: ['Noise', 'Limited green space', 'Can be touristy', 'Higher property crime', 'Less family-oriented'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Gastown', lat: 49.2835, lng: -123.1090, crimeRate: 'Moderate (higher property crime)', schoolRating: 'N/A (few schools in immediate area)', populationDemographics: 'Singles, young couples, urban dwellers', futureDevelopments: 'Ongoing revitalization of historic buildings, potential for more boutique hotels and offices.' },
+                { id: 'richmond-city-centre', name: 'Richmond - City Centre', region: 'Richmond', description: 'Thriving urban core of Richmond, known for its diverse culinary scene and proximity to YVR airport. Mix of condos, townhouses, and some detached homes.', avgCondoPrice: 680000, avgDetachedPrice: 1600000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Shopping', 'Parks', 'Transit', 'Restaurants', 'Airport Proximity'], lifestyle: 'Multicultural, Food-Centric, Convenient, Urban', pros: ['Amazing food scene', 'Good transit', 'Proximity to airport', 'New developments', 'Flat terrain'], cons: ['Traffic', 'Can feel commercial', 'Less green space', 'Foggy in winter'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Richmond', lat: 49.1670, lng: -123.1360, crimeRate: 'Low to Moderate', schoolRating: 'Good (strong ESL programs)', populationDemographics: 'High Asian population, families, diverse age groups', futureDevelopments: 'Ongoing high-rise residential and mixed-use developments, particularly along SkyTrain lines.' },
+                { id: 'delta-tsawwassen', name: 'Delta - Tsawwassen', region: 'Delta', description: 'Coastal community known for its sunny weather, ferry terminal, and Tsawwassen Mills mall. Primarily detached homes and townhouses.', avgCondoPrice: 600000, avgDetachedPrice: 1400000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Shopping', 'Ferry Terminal', 'Parks', 'US Border Proximity'], lifestyle: 'Relaxed, Coastal, Family-Friendly, Outdoor-Oriented', pros: ['More sunshine', 'Access to ferries', 'Large shopping mall', 'Quieter lifestyle'], cons: ['Isolated from central Vancouver', 'Limited public transit', 'Windy'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Tsawwassen', lat: 49.0100, lng: -123.0800, crimeRate: 'Low', schoolRating: 'Good', populationDemographics: 'Families, retirees, commuters to US', futureDevelopments: 'Limited new large-scale residential, focus on maintaining community character.' },
+                { id: 'delta-ladner', name: 'Delta - Ladner', region: 'Delta', description: 'Charming historic fishing village in Delta, offering a small-town feel, waterfront views, and a strong community.', avgCondoPrice: 550000, avgDetachedPrice: 1250000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Historic Village', 'Waterfront', 'Parks', 'Community Feel'], lifestyle: 'Quiet, Community-Focused, Small-Town Charm, Family-Friendly', pros: ['Quaint atmosphere', 'Strong community ties', 'Waterfront access', 'More relaxed pace of life'], cons: ['Further from Vancouver amenities', 'Limited transit', 'Can feel isolated'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Ladner', lat: 49.0900, lng: -123.0700, crimeRate: 'Very Low', schoolRating: 'Good', populationDemographics: 'Established families, retirees, long-term residents', futureDevelopments: 'Limited new large-scale development, focus on preserving heritage and green spaces.' },
+                { id: 'new-westminster', name: 'New Westminster', region: 'Fraser Valley', description: 'Historic city on the Fraser River, blending heritage charm with modern developments and excellent transit.', avgCondoPrice: 620000, avgDetachedPrice: 1350000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Waterfront', 'Shopping', 'Transit', 'Historic Sites', 'Schools'], lifestyle: 'Historic, Urban, Community-Focused, Convenient', pros: ['Central location in Metro Vancouver', 'Excellent transit hub', 'Waterfront access', 'More affordable than Vancouver'], cons: ['Hilly areas', 'Older housing stock in some parts', 'Traffic on main arteries'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=New+Westminster', lat: 49.2060, lng: -122.9100, crimeRate: 'Moderate', schoolRating: 'Good', populationDemographics: 'Diverse, young families, students, long-term residents', futureDevelopments: 'Continued development of high-rise condos along the waterfront and near SkyTrain stations.' },
+                { id: 'delta-north-delta', name: 'Delta - North Delta', region: 'Delta', description: 'Residential community with a mix of housing types, parks, and good access to major highways.', avgCondoPrice: 500000, avgDetachedPrice: 1100000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Parks', 'Highways Access', 'Shopping'], lifestyle: 'Suburban, Family-Friendly, Convenient, Diverse', pros: ['More affordable housing', 'Good access to highways', 'Parks and green spaces', 'Diverse community'], cons: ['Traffic congestion on main roads', 'Less walkability in some areas', 'Can feel less distinct'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=North+Delta', lat: 49.1500, lng: -122.8600, crimeRate: 'Moderate', schoolRating: 'Good', populationDemographics: 'Families, diverse ethnic groups, commuters', futureDevelopments: 'Some infill housing, focus on improving local amenities and infrastructure.' },
+                { id: 'burnaby-metrotown', name: 'Burnaby - Metrotown', region: 'Burnaby', description: 'Major urban center in Burnaby, home to Metropolis at Metrotown, high-rise condos, and excellent transit. A dense, rapidly developing area.', avgCondoPrice: 750000, avgDetachedPrice: 1800000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Shopping', 'Parks', 'Transit', 'Schools', 'Restaurants'], lifestyle: 'Convenient, Urban, Shopping-Focused, Diverse', pros: ['Shopping hub', 'Excellent transit', 'New developments', 'Relatively more affordable condos', 'Central location in Burnaby'], cons: ['Very dense', 'Traffic', 'Less "neighborhood" feel than some areas', 'High-rise dominant'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Metrotown', lat: 49.2273, lng: -122.9990, crimeRate: 'Moderate', schoolRating: 'Good (diverse options)', populationDemographics: 'Families, young professionals, diverse ethnic groups', futureDevelopments: 'Continued high-rise residential and commercial tower construction. Focus on transit-oriented development.' },
+                { id: 'port-moody', name: 'Port Moody', region: 'Tri-Cities', description: 'Scenic city at the end of Burrard Inlet, known for its arts scene, craft breweries, and access to nature.', avgCondoPrice: 700000, avgDetachedPrice: 1600000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Parks', 'Breweries', 'Art Scene', 'Transit', 'Hiking'], lifestyle: 'Arts-Focused, Outdoor-Oriented, Community-Driven, Relaxed', pros: ['Beautiful scenery', 'Vibrant arts and craft beer scene', 'Good transit via Evergreen Line', 'Access to trails'], cons: ['Limited shopping options', 'Can feel isolated', 'Traffic on St. Johns Street'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Port+Moody', lat: 49.2820, lng: -122.8800, crimeRate: 'Low', schoolRating: 'Good', populationDemographics: 'Young families, professionals, a nature lovers', futureDevelopments: 'Some new residential projects near transit, continued development of the brewery district.' },
+                { id: 'port-coquitlam', name: 'Port Coquitlam', region: 'Tri-Cities', description: 'A diverse and growing city with a mix of residential areas, parks, and a revitalized downtown.', avgCondoPrice: 580000, avgDetachedPrice: 1400000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Parks', 'Trails', 'Commuter Rail', 'Downtown Area'], lifestyle: 'Family-Friendly, Active, Community-Focused, Convenient', pros: ['More affordable than Vancouver', 'Good parks and trails', 'West Coast Express access', 'Developing downtown'], cons: ['Traffic congestion', 'Can feel spread out', 'Less vibrant nightlife'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Port+Coquitlam', lat: 49.2550, lng: -122.7750, crimeRate: 'Low to Moderate', schoolRating: 'Good', populationDemographics: 'Families, diverse, active individuals', futureDevelopments: 'Revitalization of the downtown core, new residential and mixed-use developments.' },
+                { id: 'coquitlam-city-centre', name: 'Coquitlam - City Centre', region: 'Tri-Cities', description: 'Modern urban hub with new high-rise developments, Coquitlam Centre mall, and Evergreen Line access. Primarily condos and townhouses.', avgCondoPrice: 600000, avgDetachedPrice: 1500000, propertyTypes: ['Condo', 'Townhouse'], keyAmenities: ['Shopping', 'Parks', 'Transit', 'Schools', 'Recreation Centre'], lifestyle: 'Modern, Convenient, Family-Friendly, Growing', pros: ['Newer buildings', 'Good transit to downtown', 'Parks and recreation', 'Relatively affordable', 'Planned community'], cons: ['Can feel dense', 'Still developing character', 'Traffic', 'Less established feel'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Coquitlam', lat: 49.2780, lng: -122.7930, crimeRate: 'Low', schoolRating: 'Good to Excellent', populationDemographics: 'Young families, professionals, diverse', futureDevelopments: 'Continued high-rise development around SkyTrain stations, new community amenities.' },
+                { id: 'surrey-guildford', name: 'Surrey - Guildford', region: 'Surrey', description: 'A growing urban center in Surrey with a large shopping mall, parks, and good access to highways. Mix of detached homes, townhouses, and newer condos.', avgCondoPrice: 550000, avgDetachedPrice: 1300000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Shopping', 'Parks', 'Recreation Centre', 'Highways Access'], lifestyle: 'Suburban, Family-Friendly, Convenient, Developing', pros: ['More affordable housing', 'Good shopping', 'Access to nature', 'Future transit expansion', 'Diverse community'], cons: ['Traffic congestion', 'Further from downtown Vancouver', 'Developing infrastructure', 'Less walkability in some areas'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Guildford', lat: 49.1920, lng: -122.7930, crimeRate: 'Moderate', schoolRating: 'Good', populationDemographics: 'Families, diverse ethnic backgrounds, commuters', futureDevelopments: 'Expansion of commercial areas, new residential towers around the mall.' },
+                { id: 'white-rock', name: 'White Rock', region: 'Fraser Valley', description: 'Seaside city famous for its pier, promenade, and sunny microclimate. Primarily detached homes and some condos.', avgCondoPrice: 650000, avgDetachedPrice: 1500000, propertyTypes: ['Condo', 'Detached'], keyAmenities: ['Beach Access', 'Pier', 'Restaurants', 'Ocean Views'], lifestyle: 'Coastal, Relaxed, Retirement-Friendly, Scenic', pros: ['Beautiful ocean views', 'Sunny weather', 'Beach access', 'Walkable promenade'], cons: ['Hilly terrain', 'Busy during summer', 'Further from Vancouver', 'Limited transit options'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=White+Rock', lat: 49.0200, lng: -122.8000, crimeRate: 'Low', schoolRating: 'Good', populationDemographics: 'Retirees, families, tourists', futureDevelopments: 'Some new condo developments along the waterfront, focus on tourism infrastructure.' },
+                { id: 'surrey-south-surrey', name: 'Surrey - South Surrey', region: 'Surrey', description: 'Upscale suburban area known for its beautiful homes, golf courses, and proximity to the US border.', avgCondoPrice: 700000, avgDetachedPrice: 1800000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Golf Courses', 'Parks', 'Shopping', 'US Border Proximity', 'Schools'], lifestyle: 'Affluent, Suburban, Golf-Oriented, Cross-Border Shopping', pros: ['High-end homes', 'Scenic beauty', 'Proximity to US border', 'Good schools'], cons: ['Higher prices', 'Further from Vancouver', 'Traffic on border routes'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=South+Surrey', lat: 49.0300, lng: -122.7900, crimeRate: 'Low', schoolRating: 'Excellent', populationDemographics: 'Affluent families, retirees, cross-border commuters', futureDevelopments: 'Continued development of luxury residential communities, some commercial expansion.' },
+                { id: 'pitt-meadows', name: 'Pitt Meadows', region: 'Fraser Valley', description: 'Rural-urban mix city known for its agricultural lands, outdoor activities, and family-friendly environment.', avgCondoPrice: 520000, avgDetachedPrice: 1150000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Lakes', 'Outdoor Recreation', 'Commuter Rail', 'Parks'], lifestyle: 'Rural, Outdoor-Oriented, Family-Friendly, Quiet', pros: ['Affordable housing', 'Access to nature', 'Less traffic', 'West Coast Express for commuting'], cons: ['Limited amenities', 'Further from Vancouver', 'Can feel isolated'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Pitt+Meadows', lat: 49.2300, lng: -122.6800, crimeRate: 'Very Low', schoolRating: 'Good', populationDemographics: 'Families, agricultural workers, commuters', futureDevelopments: 'Controlled growth to preserve agricultural land, some new residential projects near transit.' },
+                { id: 'langley-city', name: 'Langley City', region: 'Fraser Valley', description: 'A growing urban center in the Fraser Valley with a mix of older and newer homes, and a charming downtown core.', avgCondoPrice: 500000, avgDetachedPrice: 1100000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Shopping', 'Parks', 'University Proximity', 'Historic Sites'], lifestyle: 'Suburban, Community-Oriented, Developing, Family-Friendly', pros: ['More affordable housing', 'Strong community feel', 'Access to agricultural areas', 'Future Skytrain potential'], cons: ['Further commute to Vancouver', 'Traffic on Fraser Highway', 'Limited public transit within city'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Langley+City', lat: 49.1040, lng: -122.6050, crimeRate: 'Moderate', schoolRating: 'Good', populationDemographics: 'Families, long-term residents, growing young population', futureDevelopments: 'Potential SkyTrain extension, more mixed-use developments in the downtown core.' },
+                { id: 'maple-ridge', name: 'Maple Ridge', region: 'Fraser Valley', description: 'A growing suburban city known for its natural beauty, outdoor recreation, and more affordable detached homes.', avgCondoPrice: 480000, avgDetachedPrice: 1050000, propertyTypes: ['Condo', 'Townhouse', 'Detached'], keyAmenities: ['Parks', 'Lakes', 'Outdoor Recreation', 'Commuter Rail'], lifestyle: 'Suburban, Outdoor-Oriented, Family-Friendly, Developing', pros: ['Affordable detached homes', 'Abundant green space', 'Access to lakes and mountains', 'West Coast Express for commuting'], cons: ['Longer commute to Vancouver', 'Limited public transit within city', 'Developing infrastructure'], image: 'https://placehold.co/400x250/E0F2F7/0288D1?text=Maple+Ridge', lat: 49.2170, lng: -122.5900, crimeRate: 'Low', schoolRating: 'Good', populationDemographics: 'Families, commuters, outdoor enthusiasts', futureDevelopments: 'New residential subdivisions, some townhome and condo projects, infrastructure upgrades.' },
+            ];
+            neighborhoodsData.sort((a, b) => a.lng - b.lng);
+
+            const recommendationForm = document.getElementById('recommendation-form');
+            const recLifestyleSelect = document.getElementById('preferredLifestyle');
+            const recPropTypeSelect = document.getElementById('preferredPropertyTypeRec');
+            const recAmenitiesContainer = document.getElementById('preferredAmenitiesRec');
+            const getRecsBtn = document.getElementById('get-recommendations-btn');
+            const recsOutput = document.getElementById('recommendations-output');
+            const recsList = document.getElementById('recommendations-list');
+            const noRecsMsg = document.getElementById('no-recommendations-msg');
+            const n1Select = document.getElementById('neighborhood1');
+            const n2Select = document.getElementById('neighborhood2');
+            const compareBtn = document.getElementById('compare-btn');
+            const errorMsgDiv = document.getElementById('error-message');
+            const comparisonOutputDiv = document.getElementById('comparison-output');
+            const comparisonCardsDiv = document.getElementById('comparison-cards');
+            const mapDiv = document.getElementById('map');
+            
+            const allAmenities = [...new Set(neighborhoodsData.flatMap(n => n.keyAmenities))].sort();
+            const allPropertyTypes = ['Any', ...[...new Set(neighborhoodsData.flatMap(n => n.propertyTypes))].sort()];
+            const allLifestyles = ['Any', ...[...new Set(neighborhoodsData.map(n => n.lifestyle))].sort()];
+            let map;
+            let markers = [];
+
+            function init() {
+                populateSelect(recLifestyleSelect, allLifestyles.map(l => ({ id: l, name: l })));
+                populateSelect(recPropTypeSelect, allPropertyTypes.map(p => ({ id: p, name: p })));
+                populateCheckboxes(recAmenitiesContainer, allAmenities, 'rec_amenity');
+                populateSelect(n1Select, neighborhoodsData, 'Select Neighborhood 1');
+                populateSelect(n2Select, neighborhoodsData, 'Select Neighborhood 2');
+                setupEventListeners();
+            }
+
+            function populateSelect(selectElement, items, defaultOptionText = 'Any') {
+                selectElement.innerHTML = `<option value="">${defaultOptionText}</option>`;
+                items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id || item;
+                    option.textContent = item.name || item;
+                    selectElement.appendChild(option);
+                });
+            }
+
+            function populateCheckboxes(container, items, name) {
+                container.innerHTML = '';
+                items.forEach(item => {
+                    const label = document.createElement('label');
+                    label.className = 'inline-flex items-center bg-blue-50 px-3 py-1 rounded-full text-sm text-blue-800 cursor-pointer hover:bg-blue-100';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.name = name;
+                    checkbox.value = item;
+                    checkbox.className = 'custom-checkbox form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500';
+                    label.appendChild(checkbox);
+                    const span = document.createElement('span');
+                    span.className = 'ml-2';
+                    span.textContent = item;
+                    label.appendChild(span);
+                    container.appendChild(label);
+                });
+            }
+            
+            function getSelectedCheckboxes(container) {
+                return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+            }
+
+            function displayError(message) {
+                errorMsgDiv.textContent = message;
+                errorMsgDiv.classList.remove('hidden');
+            }
+
+            function clearError() {
+                errorMsgDiv.classList.add('hidden');
+            }
+
+            function initMap(n1, n2) {
+                if (!window.google) {
+                    displayError('Google Maps failed to load. Please check your internet connection or API key.');
+                    return;
+                }
+                
+                markers.forEach(marker => marker.setMap(null));
+                markers = [];
+                
+                const bounds = new window.google.maps.LatLngBounds();
+
+                map = new window.google.maps.Map(mapDiv, {
+                    center: { lat: 49.25, lng: -123.1 },
+                    zoom: 10,
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                });
+                
+                if (n1) {
+                    const marker1 = new window.google.maps.Marker({
+                        position: { lat: n1.lat, lng: n1.lng },
+                        map: map,
+                        title: n1.name,
+                        label: '1'
+                    });
+                    markers.push(marker1);
+                    bounds.extend(marker1.getPosition());
+                }
+
+                if (n2) {
+                    const marker2 = new window.google.maps.Marker({
+                        position: { lat: n2.lat, lng: n2.lng },
+                        map: map,
+                        title: n2.name,
+                        label: '2'
+                    });
+                    markers.push(marker2);
+                    bounds.extend(marker2.getPosition());
+                }
+
+                if (markers.length > 0) {
+                    map.fitBounds(bounds);
+                    if (markers.length === 1) {
+                        map.setZoom(12);
+                    }
+                }
+            }
+
+
+            function handleGetRecommendations() {
+                const lifestyle = recLifestyleSelect.value;
+                const propType = recPropTypeSelect.value;
+                const minPrice = document.getElementById('preferredMinPriceRec').value;
+                const maxPrice = document.getElementById('preferredMaxPriceRec').value;
+                const amenities = getSelectedCheckboxes(recAmenitiesContainer);
+
+                const recommendations = neighborhoodsData.filter(n => {
+                    if (lifestyle && n.lifestyle !== lifestyle && lifestyle !== 'Any') return false;
+                    if (propType && !n.propertyTypes.includes(propType) && propType !== 'Any') return false;
+                    if (minPrice && n.avgDetachedPrice && n.avgDetachedPrice < parseFloat(minPrice)) return false;
+                    if (maxPrice && n.avgDetachedPrice && n.avgDetachedPrice > parseFloat(maxPrice)) return false;
+                    if (amenities.length > 0 && !amenities.every(a => n.keyAmenities.includes(a))) return false;
+                    return true;
+                });
+                
+                recsOutput.classList.remove('hidden');
+                recsList.innerHTML = '';
+                
+                if(recommendations.length > 0) {
+                    noRecsMsg.classList.add('hidden');
+                    recommendations.forEach(n => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong>${n.name} (${n.region}):</strong> ${n.description}`;
+                        recsList.appendChild(li);
+                    });
+                    populateSelect(n1Select, recommendations, 'Select from Recommended');
+                    populateSelect(n2Select, recommendations, 'Select from Recommended');
+                } else {
+                    noRecsMsg.classList.remove('hidden');
+                    populateSelect(n1Select, neighborhoodsData, 'Select Neighborhood 1');
+                    populateSelect(n2Select, neighborhoodsData, 'Select Neighborhood 2');
+                }
+
+                n1Select.value = '';
+                n2Select.value = '';
+                comparisonOutputDiv.classList.add('hidden');
+                clearError();
+            }
+
+            function handleCompare() {
+                const n1Id = n1Select.value;
+                const n2Id = n2Select.value;
+
+                if (!n1Id || !n2Id) {
+                    displayError('Please select two neighborhoods to compare.');
+                    comparisonOutputDiv.classList.add('hidden');
+                    return;
+                }
+                if (n1Id === n2Id) {
+                    displayError('Please select two different neighborhoods for comparison.');
+                    comparisonOutputDiv.classList.add('hidden');
+                    return;
+                }
+
+                clearError();
+                const n1 = neighborhoodsData.find(n => n.id === n1Id);
+                const n2 = neighborhoodsData.find(n => n.id === n2Id);
+                
+                renderComparison(n1, n2);
+                comparisonOutputDiv.classList.remove('hidden');
+                initMap(n1, n2);
+            }
+
+            function renderComparison(n1, n2) {
+                comparisonCardsDiv.innerHTML = createCardHTML(n1) + createCardHTML(n2);
+            }
+
+            function createCardHTML(n) {
+                 return `
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-md border border-gray-200 comparison-card">
+                        <h3 class="text-2xl font-semibold text-blue-700 mb-4">${n.name}</h3>
+                        <p class="text-sm text-gray-500 mb-4">${n.region}</p>
+                        <img src="${n.image}" alt="Image of ${n.name}" class="w-full h-48 object-cover rounded-lg mb-4 shadow-sm" onError="this.onerror=null;this.src='https://placehold.co/400x250/E0F2F7/0288D1?text=Image+Unavailable';">
+                        <p class="mb-4 text-gray-700">${n.description}</p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <p class="font-medium text-gray-700">Average Condo Price:</p>
+                                <p class="text-lg font-bold text-green-700">${n.avgCondoPrice ? '$' + n.avgCondoPrice.toLocaleString() : 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-700">Average Detached Home Price:</p>
+                                <p class="text-lg font-bold text-green-700">${n.avgDetachedPrice ? '$' + n.avgDetachedPrice.toLocaleString() : 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-700">Key Amenities:</p>
+                                <ul class="list-disc list-inside text-gray-600">${n.keyAmenities.map(a => `<li>${a}</li>`).join('')}</ul>
+                            </div>
+                             <div>
+                                <p class="font-medium text-gray-700">Lifestyle:</p>
+                                <p class="text-gray-600">${n.lifestyle}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-700">Crime Rate:</p>
+                                <p class="text-gray-600">${n.crimeRate}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-700">School Rating:</p>
+                                <p class="text-gray-600">${n.schoolRating}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-700">Population Demographics:</p>
+                                <p class="text-gray-600">${n.populationDemographics}</p>
+                            </div>
+                             <div>
+                                <p class="font-medium text-gray-700">Future Developments:</p>
+                                <p class="text-gray-600">${n.futureDevelopments}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-700">Pros:</p>
+                                <ul class="list-disc list-inside text-green-600">${n.pros.map(p => `<li>${p}</li>`).join('')}</ul>
+                            </div>
+                             <div>
+                                <p class="font-medium text-gray-700">Cons:</p>
+                                <ul class="list-disc list-inside text-red-600">${n.cons.map(c => `<li>${c}</li>`).join('')}</ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function setupEventListeners() {
+                getRecsBtn.addEventListener('click', handleGetRecommendations);
+                compareBtn.addEventListener('click', handleCompare);
+            }
+
+            init();
+        });
+    </script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=prgC7HIj_xoJX-I_rr9Zhq5dDoI=&callback=Function.prototype"></script>
+</body>
+</html>
+```
+
