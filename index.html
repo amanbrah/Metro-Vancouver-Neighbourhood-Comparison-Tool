@@ -52,7 +52,7 @@
         <div class="w-full max-w-5xl bg-white p-6 sm:p-8 rounded-xl shadow-lg mb-8 border border-gray-200 filter-section">
             <h2 class="text-2xl font-bold text-blue-800 mb-6 text-center">Find Your Perfect Neighborhood</h2>
             <p class="text-md text-gray-700 mb-6 text-center">
-                Tell us what you're looking for, and we'll suggest neighborhoods that fit your criteria. This helps you quickly identify areas aligned with your lifestyle and budget before diving into a detailed comparison.
+                Tell us what you're looking for, and we'll suggest neighborhoods that fit your criteria. **For best results, try to limit your preferences to produce relevant matches.** This helps you quickly identify areas aligned with your lifestyle and budget before diving into a detailed comparison.
             </p>
             <div id="recommendation-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                 <div>
@@ -62,13 +62,6 @@
                 <div>
                     <label for="preferredPropertyTypeRec" class="block text-lg font-medium text-gray-700 mb-2">Preferred Property Type:</label>
                     <select id="preferredPropertyTypeRec" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"></select>
-                </div>
-                <div>
-                    <label class="block text-lg font-medium text-gray-700 mb-2">Target Detached Price Range:</label>
-                    <div class="flex gap-4">
-                        <input type="number" id="preferredMinPriceRec" placeholder="Min Price" class="w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
-                        <input type="number" id="preferredMaxPriceRec" placeholder="Max Price" class="w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900">
-                    </div>
                 </div>
                 <div id="preferredAmenitiesContainer" class="md:col-span-2 lg:col-span-3">
                     <label class="block text-lg font-medium text-gray-700 mb-2">Preferred Amenities:</label>
@@ -287,15 +280,11 @@
             function handleGetRecommendations() {
                 const lifestyle = recLifestyleSelect.value;
                 const propType = recPropTypeSelect.value;
-                const minPrice = document.getElementById('preferredMinPriceRec').value;
-                const maxPrice = document.getElementById('preferredMaxPriceRec').value;
                 const amenities = getSelectedCheckboxes(recAmenitiesContainer);
 
                 const recommendations = neighborhoodsData.filter(n => {
                     if (lifestyle && n.lifestyle !== lifestyle && lifestyle !== 'Any') return false;
                     if (propType && !n.propertyTypes.includes(propType) && propType !== 'Any') return false;
-                    if (minPrice && n.avgDetachedPrice && n.avgDetachedPrice < parseFloat(minPrice)) return false;
-                    if (maxPrice && n.avgDetachedPrice && n.avgDetachedPrice > parseFloat(maxPrice)) return false;
                     if (amenities.length > 0 && !amenities.every(a => n.keyAmenities.includes(a))) return false;
                     return true;
                 });
@@ -417,5 +406,3 @@
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=prgC7HIj_xoJX-I_rr9Zhq5dDoI=&callback=Function.prototype"></script>
 </body>
 </html>
-```
-
